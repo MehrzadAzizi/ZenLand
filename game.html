@@ -31,8 +31,8 @@
 
   <script type="module">
     import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
-    import { loadComponent } from '/components.js';
-    await loadComponent('header', '/header.html');
+    import { loadComponent } from './components.js';
+    await loadComponent('header', './header.html');
 
     const canvas = document.getElementById("plinkoCanvas");
     const ctx = canvas.getContext("2d");
@@ -289,9 +289,10 @@
     createPegs();
     draw();
     
-  import('/main.js');
+  import('./main.js');
   </script>
 </body>
 
 </html>
+
 
