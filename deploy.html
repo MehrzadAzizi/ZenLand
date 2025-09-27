@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZenMint - Word Guess</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="header"></div>
@@ -29,9 +29,9 @@ contract HelloWorld {
   <script src="https://cdn.jsdelivr.net/npm/solc@0.8.17/solc.min.js"></script>
   <script type="module">
     import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
-    import { loadComponent } from '/assets/js/components.js';
+    import { loadComponent } from 'components.js';
 
-    await loadComponent('header', '/assets/components/header.html');
+    await loadComponent('header', 'header.html');
 
     // Wallet connection logic
     const connectBtn = document.getElementById('connectBtn');
@@ -112,8 +112,9 @@ document.getElementById("deployHelloBtn").addEventListener("click", async () => 
 });
 
     // Game logic will be loaded from external JS
-    import('/assets/js/main.js');
+    import('main.js');
   </script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </body>
+
 </html>
