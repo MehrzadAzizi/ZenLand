@@ -5,7 +5,7 @@ html, body {
   padding: 0;
   font-family: sans-serif;
   color: white;
-  background: url('/bg.webp') center center / cover no-repeat fixed;
+  background: url('bg.webp') center center / cover no-repeat fixed;
 }
 
 /* Header styling */
@@ -403,4 +403,5 @@ a {
       overflow-x: auto;
       font-family: monospace;
     }
+
 
