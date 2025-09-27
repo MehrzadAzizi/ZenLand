@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZenMint</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="header"></div>
@@ -50,10 +50,10 @@
   </main>
 
   <script type="module">
-    import { loadComponent } from '/assets/js/components.js';
+    import { loadComponent } from 'components.js';
 
     // لود کردن هدر
-    await loadComponent('header', '/assets/components/header.html');
+    await loadComponent('header', 'header.html');
 
     // بررسی وضعیت اتصال کیف پول
     const walletAddress = localStorage.getItem('walletAddress');
@@ -72,7 +72,8 @@
     }
 
     // لود کردن منطق اصلی
-    import('/assets/js/main.js');
+    import('main.js');
   </script>
 </body>
+
 </html>
