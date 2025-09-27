@@ -17,5 +17,6 @@ app.get('/create', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(' ZenMint clone running at http://localhost:${port} ');
+  console.log(' ZenLand clone running at http://localhost:${port} ');
+
 });
