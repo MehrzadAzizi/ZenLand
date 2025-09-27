@@ -50,7 +50,7 @@
   </main>
 
   <script type="module">
-    import { loadComponent } from '/components.js';
+    import { loadComponent } from './components.js';
 
     // لود کردن هدر
     await loadComponent('header', '/header.html');
@@ -72,11 +72,12 @@
     }
 
     // لود کردن منطق اصلی
-    import('/main.js');
+    import('./main.js');
   </script>
 </body>
 
 </html>
+
 
 
 
