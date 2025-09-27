@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenMint</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+  <main>
+    <h1>Welcome to ZenLand</h1>
+    <p class="subtitle">The easiest way to create, deploy, and manage your assets on the ZenChain Testnet.</p>
+
+    <section class="cards">
+      <div class="card">
+        <div class="icon">📄</div>
+        <h2>Deploy a Contract</h2>
+        <p>Complete a ZenQuest challenge by deploying a standard smart contract directly from your wallet.</p>
+        <a href="deploy.html" class="btn">Deploy Now</a>
+      </div>
+      <div class="card">
+        <div class="icon">➡️</div>
+        <h2>Send ZTC Tokens</h2>
+        <p>Send ZTC Token to another wallet or user.</p>
+        <a href="send.html" class="btn">Send Tokens</a>
+      </div>
+      <div class="card">
+        <div class="icon"> 🧠</div>
+        <h2>Word Guessing</h2>
+        <p>Guess the word with limited attempts and display of errors.</p>
+        <a href="word.html" class="btn">Play Game</a>
+      </div>
+      
+    </section>
+    <section class="cards">
+         <div class="card">
+        <div class="icon">🎯</div>
+        <h2>Plinco Game</h2>
+        <p> game of chance with falling dice and receiving a prize.</p>
+        <a href="game.html" class="btn">Play Game</a>
+      </div>
+     <div class="card">
+      <div class="icon">🔍</div>
+      <h2>Explore ZenApps</h2>
+      <p>Coming Soon</p>
+      <a href="" class="btn">Explore Now</a>
+       </div>
+      </section>
+  </main>
+
+  <script type="module">
+    import { loadComponent } from '/assets/js/components.js';
+
+    // لود کردن هدر
+    await loadComponent('header', '/assets/components/header.html');
+
+    // بررسی وضعیت اتصال کیف پول
+    const walletAddress = localStorage.getItem('walletAddress');
+    const connectBtn = document.getElementById('connectBtn');
+    const gmBtn = document.getElementById('gmBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+
+    if (walletAddress) {
+      connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      gmBtn.disabled = false;
+      disconnectBtn.style.display = 'inline-block';
+    } else {
+      connectBtn.textContent = '🦊 Connect Wallet';
+      gmBtn.disabled = true;
+      disconnectBtn.style.display = 'none';
+    }
+
+    // لود کردن منطق اصلی
+    import('/assets/js/main.js');
+  </script>
+</body>
+</html>

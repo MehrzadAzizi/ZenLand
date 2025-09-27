@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenMint - Plinko Game</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+  <main>
+    <a href="/" style="margin: 1rem; display: inline-block;">← Back to Home</a>
+
+    <section class="send-token-form">
+      <h2>Plinko Game</h2>
+
+      
+      <div class="plinko-wrapper">
+      <canvas id="plinkoCanvas" width="600" height="700" style="display:block; margin: 2rem auto; border: 2px solid #ccc; border-radius: 12px;"></canvas>
+
+
+      <div class="form-group">
+        <label for="amountInput">Amount</label>
+        <input type="number" id="amountInput" placeholder="Enter amount" />
+      </div>
+
+      <button id="dropBall" class="btn">🎯 Drop Ball</button>
+     </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
+    import { loadComponent } from '/assets/js/components.js';
+    await loadComponent('header', '/assets/components/header.html');
+
+    const canvas = document.getElementById("plinkoCanvas");
+    const ctx = canvas.getContext("2d");
+  
+
+    const connectBtn = document.getElementById('connectBtn');
+    const gmBtn = document.getElementById('gmBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+
+    let walletAddress = localStorage.getItem('walletAddress');
+    if (walletAddress) {
+      connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      gmBtn.disabled = false;
+      disconnectBtn.style.display = 'inline-block';
+    } else {
+      connectBtn.textContent = '🦊 Connect Wallet';
+      gmBtn.disabled = true;
+      disconnectBtn.style.display = 'none';
+    }
+
+    async function connectWallet() {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        walletAddress = accounts[0];
+        localStorage.setItem('walletAddress', walletAddress);
+
+        connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+        gmBtn.disabled = false;
+        disconnectBtn.style.display = 'inline-block';
+
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x20d8',
+            chainName: 'ZenChain Testnet',
+            nativeCurrency: {
+              name: 'ZenChain Token',
+              symbol: 'ZTC',
+              decimals: 18
+            },
+            rpcUrls: ['https://zenchain-testnet.api.onfinality.io/public']
+          }]
+        });
+      } catch (err) {
+        console.error('Wallet connection failed:', err);
+        alert('❌ Failed to connect wallet.');
+      }
+    }
+
+    const pegs = [];
+    const pegRows = [];
+    const lastRowPegs = [];
+    const slots = [110, 7, 11, 0.11, 3.5, 0.2, 1.5, 0.5, 0.5, 1.5, 2, 3.5, 5.1, 1.1, 0.01, 1000];
+    const slotColors = [
+      "#c0392b", "#e67e22", "#f1c40f", "#27ae60", "#2980b9",
+      "#8e44ad", "#16a085", "#7f8c8d", "#7f8c8d", "#16a085",
+      "#8e44ad", "#2980b9", "#27ae60", "#f1c40f", "#e67e22", "#f39c12"
+    ];
+    const slotWidth = 30;
+    let ball = null;
+
+    function createPegs() {
+      const rows = 16;
+      const spacingX = 30;
+      const spacingY = 35;
+
+      for (let row = 1; row < rows; row++) {
+        const pegsInRow = row + 1;
+        const offsetX = (canvas.width - pegsInRow * spacingX) / 2;
+        const rowPegs = [];
+
+        for (let i = 0; i < pegsInRow; i++) {
+          const x = offsetX + i * spacingX;
+          const y = 80 + row * spacingY;
+          pegs.push({ x, y });
+          rowPegs.push(x);
+
+          if (row === rows - 1) {
+            lastRowPegs.push(x);
+          }
+        }
+
+        pegRows.push({ y: 80 + row * spacingY, xs: rowPegs });
+      }
+    }
+
+    function getAllowedXRange(y) {
+      let closestRow = pegRows[0];
+      for (let row of pegRows) {
+        if (Math.abs(row.y - y) < Math.abs(closestRow.y - y)) {
+          closestRow = row;
+        }
+      }
+      const min = closestRow.xs[0] - slotWidth / 2;
+      const max = closestRow.xs[closestRow.xs.length - 1] + slotWidth / 2;
+      return { min, max };
+    }
+
+    function drawPegs() {
+      ctx.fillStyle = "#00ff88";
+      pegs.forEach(peg => {
+        ctx.beginPath();
+        ctx.arc(peg.x, peg.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawSlots() {
+      for (let i = 0; i < lastRowPegs.length; i++) {
+        const x = lastRowPegs[i] - slotWidth / 2;
+        const y = canvas.height - 50;
+        const color = slotColors[i % slotColors.length];
+        const label = slots[i % slots.length];
+
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, slotWidth, 50);
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "14px Arial";
+        ctx.fillText(`${label}x`, x + 5, y + 30);
+      }
+    }
+
+    function drawBall() {
+      if (ball) {
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      }
+    }
+
+    function getClosestSlotIndex(x) {
+      let closestIndex = 0;
+      let minDist = Infinity;
+      for (let i = 0; i < lastRowPegs.length; i++) {
+        const dist = Math.abs(x - lastRowPegs[i]);
+        if (dist < minDist) {
+          minDist = dist;
+          closestIndex = i;
+        }
+      }
+      return closestIndex;
+    }
+
+    function updateBall() {
+      if (!ball) return;
+
+      ball.vy += 0.4;
+      ball.y += ball.vy;
+      ball.x += ball.vx;
+
+      const { min, max } = getAllowedXRange(ball.y);
+      if (ball.x < min + 10) {
+        ball.x = min + 10;
+        ball.vx = Math.abs(ball.vx);
+      }
+      if (ball.x > max - 10) {
+        ball.x = max - 10;
+        ball.vx = -Math.abs(ball.vx);
+      }
+
+      pegs.forEach(peg => {
+        const dx = ball.x - peg.x;
+        const dy = ball.y - peg.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 15) {
+          ball.vx += (Math.random() - 0.5) * 2;
+          ball.vy *= -0.5;
+          ball.vx = Math.max(-3, Math.min(3, ball.vx));
+        }
+      });
+
+      if (ball.y > canvas.height - 60) {
+        const slotIndex = getClosestSlotIndex(ball.x);
+        const prize = slots[slotIndex];
+        const bet = parseFloat(document.getElementById("amountInput").value);
+        const payout = (prize * bet).toFixed(2);
+        alert(`🎉 Your Reward ${prize} x ${bet} = ${payout} ZTC`);
+        ball = null;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPegs();
+      drawSlots();
+      drawBall();
+      updateBall();
+      requestAnimationFrame(draw);
+    }
+      
+    document.getElementById("dropBall").addEventListener("click", async () => {
+  // بررسی اتصال کیف پول
+  if (!window.ethereum) {
+    alert("🦊 Please install MetaMask.");
+    return;
+  }
+
+  let accounts;
+  try {
+    accounts = await window.ethereum.request({ method: "eth_accounts" });
+    if (!accounts || accounts.length === 0) {
+      // اگر کیف پول وصل نیست، اتصال رو اجرا کن
+      accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    }
+  } catch (err) {
+    alert("❌ Wallet connection failed.");
+    return;
+  }
+
+  const walletAddress = accounts[0];
+  const amount = document.getElementById("amountInput").value;
+
+  // بررسی عددی بودن مقدار
+  if (!amountInput || isNaN(amount) || Number(amount) <= 0) {
+    alert("Please enter a valid numeric amount.");
+    return;
+  }
+
+  // ارسال توکن ZTC به آدرس مشخص‌شده
+  const recipient = "0xeedC4027deFa2f41b9faC477B9F389389b1EEc64";
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+    const tx = await signer.sendTransaction({
+      to: recipient,
+      value: ethers.utils.parseEther(amount)
+    });
+
+    alert("Transaction sent! Waiting for confirmation...");
+    await tx.wait();
+    alert(`✅ ${amount} ZTC successfully sent to ${recipient}`);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Transaction failed.");
+    return;
+  }
+
+  // اجرای بازی بعد از ارسال موفق
+  if (!ball) {
+    const topRow = pegRows[0];
+    const centerX = (topRow.xs[0] + topRow.xs[topRow.xs.length - 1]) / 2;
+    ball = {
+      x: centerX,
+      y: 50,
+      vx: (Math.random() - 0.5) * 2,
+      vy: 0
+    };
+  }
+});
+
+    createPegs();
+    draw();
+    
+  import('/assets/js/main.js');
+  </script>
+</body>
+</html>

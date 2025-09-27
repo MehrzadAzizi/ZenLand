@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenMint</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+  <main>
+    <a href="/">← Back to Home</a>
+    <section class="send-token-form">
+      <h2>Send Tokens</h2>
+
+      <div class="form-group">
+        <label for="token">Select Token</label>
+        <select id="token">
+          <option value="">-- Choose Token --</option>
+          <option value="ZTC">ZTC</option>
+          <option value="ZEN">USDC</option>
+          <option value="ETH">ETH</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" placeholder="Enter amount" />
+      </div>
+
+      <div class="form-group">
+        <label for="recipient">Recipient Wallet Address</label>
+        <input type="text" id="recipient" placeholder="0x..." />
+      </div>
+
+      <button id="sendBtn" class="btn">🚀 Send</button>
+    </section>
+  </main>
+
+  <script type="module">
+    import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
+    import { loadComponent } from '/assets/js/components.js';
+
+    await loadComponent('header', '/assets/components/header.html');
+
+    const connectBtn = document.getElementById('connectBtn');
+    const gmBtn = document.getElementById('gmBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+
+    let walletAddress = localStorage.getItem('walletAddress');
+    if (walletAddress) {
+      connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      gmBtn.disabled = false;
+      disconnectBtn.style.display = 'inline-block';
+    } else {
+      connectBtn.textContent = '🦊 Connect Wallet';
+      gmBtn.disabled = true;
+      disconnectBtn.style.display = 'none';
+    }
+
+    async function connectWallet() {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        walletAddress = accounts[0];
+        localStorage.setItem('walletAddress', walletAddress);
+
+        connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+        gmBtn.disabled = false;
+        disconnectBtn.style.display = 'inline-block';
+
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x20d8',
+            chainName: 'ZenChain Testnet',
+            nativeCurrency: {
+              name: 'ZenChain Token',
+              symbol: 'ZTC',
+              decimals: 18
+            },
+            rpcUrls: ['https://zenchain-testnet.api.onfinality.io/public']
+          }]
+        });
+      } catch (err) {
+        console.error('Wallet connection failed:', err);
+        alert('❌ Failed to connect wallet.');
+      }
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      if (!walletAddress) {
+        alert('Please connect your wallet first.');
+        await connectWallet();
+        if (!walletAddress) return;
+      }
+
+      const token = document.getElementById('token').value;
+      const amount = document.getElementById('amount').value;
+      const recipient = document.getElementById('recipient').value;
+
+      if (!token) {
+        alert('Please select a token.');
+        return;
+      }
+
+      if (token !== 'ZTC') {
+        alert('This token is not available on the ZenChain network.');
+        return;
+      }
+
+      if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        alert('Please enter a valid numeric amount.');
+        return;
+      }
+
+      const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(recipient);
+      if (!isValidAddress) {
+        alert('Invalid Ethereum wallet address.');
+        return;
+      }
+
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        const tx = await signer.sendTransaction({
+          to: recipient,
+          value: ethers.utils.parseEther(amount)
+        });
+
+        alert('Transaction sent! Waiting for confirmation...');
+        await tx.wait();
+        alert(`✅ ${amount} ZTC successfully sent to ${recipient}`);
+      } catch (err) {
+        console.error(err);
+        alert('❌ Transaction failed.');
+      }
+    });
+
+    import('/assets/js/main.js');
+  </script>
+</body>
+</html>

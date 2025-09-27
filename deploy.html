@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenMint - Word Guess</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+  <main>
+    <a href="/">← Back to Home</a>
+    <section class="send-token-form">
+      <h2>Deploy a Smart Contract</h2>
+      <div class="game-container">
+        <div class="deploy-section">
+          <pre><code>pragma solidity ^0.8.0;
+
+contract HelloWorld {
+    string public greet = 
+    "Hello World!";
+}</code></pre>
+        </div>
+        <button id="deployHelloBtn" class="btn">Deploy Contract</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/solc@0.8.17/solc.min.js"></script>
+  <script type="module">
+    import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
+    import { loadComponent } from '/assets/js/components.js';
+
+    await loadComponent('header', '/assets/components/header.html');
+
+    // Wallet connection logic
+    const connectBtn = document.getElementById('connectBtn');
+    const gmBtn = document.getElementById('gmBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+
+    let walletAddress = localStorage.getItem('walletAddress');
+    if (walletAddress) {
+      connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      gmBtn.disabled = false;
+      disconnectBtn.style.display = 'inline-block';
+    } else {
+      connectBtn.textContent = '🦊 Connect Wallet';
+      gmBtn.disabled = true;
+      disconnectBtn.style.display = 'none';
+    }
+
+    async function connectWallet() {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        walletAddress = accounts[0];
+        localStorage.setItem('walletAddress', walletAddress);
+
+        connectBtn.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+        gmBtn.disabled = false;
+        disconnectBtn.style.display = 'inline-block';
+
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x20d8',
+            chainName: 'ZenChain Testnet',
+            nativeCurrency: {
+              name: 'ZenChain Token',
+              symbol: 'ZTC',
+              decimals: 18
+            },
+            rpcUrls: ['https://zenchain-testnet.api.onfinality.io/public']
+          }]
+        });
+      } catch (err) {
+        console.error('Wallet connection failed:', err);
+        alert('❌ Failed to connect wallet.');
+      }
+    }
+
+   // ✅ Deploy simple contract to register a transaction
+document.getElementById("deployHelloBtn").addEventListener("click", async () => {
+  if (!walletAddress) {
+        alert('Please connect your wallet first.');
+        await connectWallet();
+        if (!walletAddress) return;
+      }
+
+
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const accounts = await provider.listAccounts();
+
+  if (!accounts || accounts.length === 0) {
+    await connectWallet();
+  }
+
+  const abi = [];
+  const bytecode = "0x6080604052348015600f57600080fd5b506000805460ff19166001179055602a8061002e6000396000f3fe6080604052600080fdfea2646970667358221220b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b164736f6c634300080a0033";
+
+  const signer = provider.getSigner();
+  const factory = new ethers.ContractFactory(abi, bytecode, signer);
+
+  try {
+    const contract = await factory.deploy();
+    await contract.deployed();
+    console.log("✅ Contract deployed at:", contract.address);
+    alert(`✅ قرارداد ثبت تراکنش دیپلوی شد:\n${contract.address}`);
+  } catch (err) {
+    console.error("❌ خطا در دیپلوی:", err);
+    alert("❌ خطا در دیپلوی قرارداد.");
+  }
+});
+
+    // Game logic will be loaded from external JS
+    import('/assets/js/main.js');
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</body>
+</html>
